@@ -1,5 +1,8 @@
 import pandas as pd
 from io import StringIO
+from requests.auth import HTTPBasicAuth
+import requests
+import json
 
 
 def read_file(file_name: str, event_type: str) -> pd.DataFrame:
@@ -37,7 +40,7 @@ def read_file(file_name: str, event_type: str) -> pd.DataFrame:
             raise ValueError(f"CSV does not have a descriptor for {event_type}")
 
         # delete delete prefix and descriptor, i.e. ";;;;Shifts;"
-        event_columns = event_columns[4+len(event_type):]
+        event_columns = event_columns[4 + len(event_type):]
 
         # concat columns
         columns += event_columns
@@ -57,3 +60,32 @@ def read_file(file_name: str, event_type: str) -> pd.DataFrame:
     df = df[df["Event type"].str.contains(event_type[:-1])]
 
     return df
+
+
+def read_from_web(credential_file: str) -> pd.DataFrame:
+    """
+    Reads shift data from web
+
+    :param credential_file: path to credentials file for download
+    :return: data frame
+    """
+
+    # load credentials
+    with open(credential_file, "r") as f:
+        credentials = json.load(f)
+
+    # configure parameters
+    headers = {'Accept': 'application/json',
+               "Authorization": credentials["API_KEY"]}
+    auth = HTTPBasicAuth(credentials["USER"], credentials["PASSWORD"])
+    url = "https://elverum-api-test.access.kinexon.com/public/v1/events/shift/player/in-entity/session/latest?apiKey=" + credentials["API_KEY"]
+
+    # download data
+    req = requests.get(url,
+                       headers,
+                       auth=auth)
+
+    # extract json from request
+    js = json.loads(req.content)
+
+    return pd.json_normalize(js)
