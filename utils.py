@@ -2,13 +2,14 @@ import pandas as pd
 from io import StringIO
 
 
-def read_file(file_name: str) -> pd.DataFrame:
+def read_file(file_name: str, event_type: str) -> pd.DataFrame:
     """
     Create a dataframe from a "Events export"-file downloaded from kinexon.
 
-    For best results, select all periods and only the metrics "Timestamp in local format" and "Shifts".
+    For best results, select all periods and only the metrics "Timestamp in local format" and desired event_type.
 
     :param file_name: path to the file
+    :param event_type: event type, e.g. "Shifts", "Changes of Direction", ...
     :return: pandas dataframe
     """
 
@@ -18,8 +19,9 @@ def read_file(file_name: str) -> pd.DataFrame:
 
         # get rid of weird starting characters and remove new line
         columns = columns.strip()
-        # find "Shifts"-descriptor
-        shift_columns = None
+
+        # find descriptor of element type
+        event_columns = None
         while True:
             next_line = f.readline()
 
@@ -27,20 +29,19 @@ def read_file(file_name: str) -> pd.DataFrame:
             if not next_line.startswith(";;;;"):
                 break
 
-            # we find Shifts-descriptor or
-            if "Shifts" in next_line:
-                shift_columns = next_line
+            # we find event type-descriptor
+            if event_type in next_line:
+                event_columns = next_line
 
-        if not shift_columns:
-            raise ValueError("CSV does not have a descriptor for Shifts")
+        if not event_columns:
+            raise ValueError(f"CSV does not have a descriptor for {event_type}")
 
         # delete delete prefix and descriptor, i.e. ";;;;Shifts;"
-        shift_columns = shift_columns[9:]
+        event_columns = event_columns[4+len(event_type):]
 
         # concat columns
-        columns += shift_columns
-        print(columns)
-        #        columns = columns.replace("Metabolic Power (Ã˜)", "")
+        columns += event_columns
+
         # read all rows
         file_str = columns
         while next_line:
@@ -53,4 +54,6 @@ def read_file(file_name: str) -> pd.DataFrame:
         # save data to df
         df = pd.read_csv(StringIO(file_str), sep=";", index_col=False)
 
-        return df
+    df = df[df["Event type"].str.contains(event_type[:-1])]
+
+    return df
