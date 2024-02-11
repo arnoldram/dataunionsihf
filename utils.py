@@ -127,8 +127,6 @@ def plot_shifts_with_intensity(df: pd.DataFrame, time_window: int):
     :return: None
     """
 
-    df = df[df["Name"].str.contains("Guest")]
-
     # create plot
     fig, ax = plt.subplots()
 
