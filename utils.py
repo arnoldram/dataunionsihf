@@ -113,7 +113,7 @@ def get_colour(intensity: int) -> str:
     return colour
 
 
-def plot_shifts_with_intensity(df: pd.DataFrame, time_window: int):
+def plot_shifts(df: pd.DataFrame, time_window: int):
     """
     Plots shifts of all players together with the intensity of all individual shifts
 
@@ -157,11 +157,11 @@ def plot_shifts_with_intensity(df: pd.DataFrame, time_window: int):
     plt.show()
 
 
-def plot_shifts_with_intensity_individual(df: pd.DataFrame,
-                                          time_window_start: int = 0,
-                                          time_window_duration: int = 5,
-                                          intensity_indicator: str = "Skating Intensity",
-                                          block_config: dict = None):
+def plot_shifts_with_intensity(df: pd.DataFrame,
+                               time_window_start: int = 0,
+                               time_window_duration: int = 5,
+                               intensity_indicator: str = "Skating Intensity",
+                               block_config: dict = None):
     """
     Plots shifts of all players together with the intensity of all individual shifts.
 
@@ -245,7 +245,7 @@ def plot_shifts_with_intensity_individual(df: pd.DataFrame,
         df_plot["relative_intensity"] = df_plot[intensity_indicator] - df_plot[intensity_indicator].min()
         df_plot["relative_intensity"] /= df_plot["relative_intensity"].max()
 
-    plot_shifts_with_intensity(df_plot, time_window_duration)
+    plot_shifts(df_plot, time_window_duration)
 
     return df_plot
 
