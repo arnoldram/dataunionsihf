@@ -10,6 +10,8 @@ from kneed import KneeLocator
 from requests.auth import HTTPBasicAuth
 from sklearn.cluster import KMeans
 
+import seaborn as sns
+
 
 def read_file(file_name: str, event_type: str) -> pd.DataFrame:
     """
@@ -295,3 +297,101 @@ def find_optimal_amount_of_shifts(df: pd.DataFrame, simple: bool, verbose: bool)
             print("Knee, i.e. calculated number of shifts, is at:", nof_shifts)
 
     return nof_shifts, data
+
+def add_sis_column(df):
+    """
+    Adds a 'SIS' (Shift Intensity Score) column to the DataFrame for guest players excluding goalkeepers.
+    This function filters the DataFrame for guest players, calculates the optimal number of shifts using KMeans clustering,
+    computes the average shift intensity, and calculates the SIS for each player based on the average intensity
+    of all their shifts relative to the overall average shift intensity of all players.
+
+    Parameters:
+    - df: pandas.DataFrame containing player data including columns for 'Name', 'Timestamp (ms)', 'Duration (s)', and 'Skating Intensity'.
+
+    Returns:
+    - pandas.DataFrame: The original DataFrame with an added 'SIS' column for each player.
+    """
+    # Filter DataFrame for guest players excluding goalkeepers
+    df_filtered = df[df["Name"].str.contains("Guest") & ~df["Name"].str.contains("Goalkeeper")].copy()
+
+    # Finding the optimal number of shifts
+    optimal_shifts, shift_labels = find_optimal_amount_of_shifts(df_filtered, True, False)
+
+    # Preparing data for clustering
+    data_for_clustering = df_filtered[["Timestamp (ms)", "Duration (s)"]]
+
+    # Clustering with KMeans
+    kmeans = KMeans(n_clusters=optimal_shifts)
+    kmeans.fit(data_for_clustering)
+
+    # Adding cluster labels
+    df_filtered["Shift_Label"] = kmeans.labels_
+
+    # Calculating average intensity for each shift
+    df_filtered['Average_Shift_Intensity'] = df_filtered.groupby('Shift_Label')['Skating Intensity'].transform('mean')
+
+    # Average intensity of all shifts for each player
+    player_shift_means = df_filtered.groupby(['Name', 'Shift_Label'])['Skating Intensity'].mean().reset_index()
+    player_average_intensity = player_shift_means.groupby('Name')['Skating Intensity'].mean()
+
+    # Average value of intensities for all shifts of all players
+    overall_average_shift_intensity = player_shift_means['Skating Intensity'].mean()
+
+    # Calculating SIS for each player
+    player_sis = player_average_intensity / overall_average_shift_intensity
+
+    # Adding the SIS to df_filtered
+    df_filtered['SIS'] = df_filtered['Name'].map(player_sis)
+
+    return df_filtered
+
+def plot_skating_intensity(df: pd.DataFrame, time_window: int, player_sis: pd.Series):  # Note: The time_window can be implemented but may not be useful
+    """
+    Plots skating intensity over time for "Guest" players, excluding goalkeepers.
+
+    :param df: DataFrame containing player data including 'Timestamp (ms)', 'Name', and 'Skating Intensity'.
+    :param time_window: How much time should be plotted, in minutes, from the start. Not jet implemented.
+    :param player_sis: Series containing the Shift Intensity Score for each player.
+    Example:
+    plot_skating_intensity(add_sis_column(df), 5, player_sis)
+    """
+    # Convert timestamps to a readable format and calculate the duration since the start
+    df['Readable Timestamp'] = pd.to_datetime(df['Timestamp (ms)'], unit='ms')
+    df['End Timestamp'] = df['Readable Timestamp'] + pd.to_timedelta(df['Duration (s)'], unit='s')
+    df['Duration Since Start'] = (df['Readable Timestamp'] - df['Readable Timestamp'].min()).dt.total_seconds() / 60
+
+    # Filter to include only "Guest" players and exclude goalkeepers
+    df_filtered = df[df["Name"].str.contains("Guest") & ~df["Name"].str.contains("Goalkeeper")].copy()
+
+    # Extract the numeric part from the names for sorting
+    df_filtered['Name Number'] = df_filtered['Name'].str.extract('(\d+)').astype(int)
+
+    # Sort by the extracted numbers
+    df_filtered = df_filtered.sort_values('Name Number')
+
+    # Create the visualization
+    g = sns.FacetGrid(df_filtered, col="Name", col_wrap=4, height=4, aspect=1.5)
+
+    def draw_duration_lines(data, **kwargs):
+        ax = plt.gca()
+        for _, row in data.iterrows():
+            start_time = row['Duration Since Start']
+            duration = (row['End Timestamp'] - row['Readable Timestamp']).total_seconds() / 60
+            end_time = start_time + duration
+            # Draw lines indicating the duration of each event (start = green, end = red)
+            ax.vlines(x=start_time, ymin=0, ymax=row['Skating Intensity'], color='green', linestyle='-', alpha=0.7)
+            ax.vlines(x=end_time, ymin=0, ymax=row['Skating Intensity'], color='red', linestyle='-', alpha=0.7)
+
+    g.map_dataframe(draw_duration_lines)
+    g.map_dataframe(sns.scatterplot, 'Duration Since Start', 'Skating Intensity', alpha=0.7)
+    g.set_axis_labels('Minutes Since Start', 'Skating Intensity')
+
+    # Add SIS values to each facet
+    for ax, name in zip(g.axes.flatten(), df_filtered['Name'].unique()):
+        sis_value = player_sis[name]
+        ax.text(0.95, 0.90, f'SIS: {sis_value:.2f}', transform=ax.transAxes,
+                horizontalalignment='right', verticalalignment='top',
+                fontsize=20, bbox=dict(facecolor='white', alpha=0.5))
+
+    g.set_titles("{col_name}")
+    plt.show()
