@@ -162,60 +162,83 @@ def add_sis_column(df):
 
     return df_filtered
 
-def plot_skating_intensity(df, selected_players, player_sis):
-    if not selected_players:  # If no players are selected, return early
-        st.write("Please select at least one player.")
-        return
+def add_duration_since_start(df):
+    """
+    Adds a 'Duration Since Start' column to the dataframe based on 'Timestamp (ms)'.
+    """
+    df['Readable Timestamp'] = pd.to_datetime(df['Timestamp (ms)'], unit='ms')
+    df['End Timestamp'] = df['Readable Timestamp'] + pd.to_timedelta(df['Duration (s)'], unit='s')
+    df['Duration Since Start'] = (df['Readable Timestamp'] - df['Readable Timestamp'].min()).dt.total_seconds() / 60
+    return df
 
-    df_filtered = df[df['Name'].isin(selected_players) & ~df['Name'].str.contains("Goalkeeper")]
-    if df_filtered.empty:
-        st.write("No data available for the selected players.")
-        return
+def plot_skating_intensity(df, selected_players, time_window):
+    """
+    Plots skating intensity over time for selected players, excluding goalkeepers, within a specified time window.
+    """
+    # Preprocess DataFrame
+    df = add_duration_since_start(df)
+    df_filtered = df[df["Name"].isin(selected_players) & ~df["Name"].str.contains("Goalkeeper")].copy()
 
+    # Extracting numeric part from names for sorting (if applicable)
+    df_filtered['Name Number'] = df_filtered['Name'].str.extract('(\d+)').astype(int, errors='ignore')
+
+    # Sorting by extracted numbers (if applicable)
+    df_filtered = df_filtered.sort_values('Name Number', ignore_index=True)
+
+    # Filtering for the specified time window
+    df_filtered = df_filtered[df_filtered['Duration Since Start'] <= time_window]
+
+    # Creating the visualization
     g = sns.FacetGrid(df_filtered, col="Name", col_wrap=4, height=4, aspect=1.5)
+
+    def draw_duration_lines(data, **kwargs):
+        ax = plt.gca()
+        for _, row in data.iterrows():
+            start_time = row['Duration Since Start']
+            duration = (row['End Timestamp'] - row['Readable Timestamp']).total_seconds() / 60  # Conversion to minutes
+            end_time = start_time + duration
+            # Ensure end time is within the time window
+            if start_time <= time_window:
+                ax.vlines(x=start_time, ymin=0, ymax=row['Skating Intensity'], color='green', linestyle='-', alpha=0.7)
+                if end_time <= time_window:
+                    ax.vlines(x=end_time, ymin=0, ymax=row['Skating Intensity'], color='red', linestyle='-', alpha=0.7)
+
+    g.map_dataframe(draw_duration_lines)
     g.map_dataframe(sns.scatterplot, 'Duration Since Start', 'Skating Intensity', alpha=0.7)
     g.set_axis_labels('Minutes Since Start', 'Skating Intensity')
 
-    for ax, name in zip(g.axes.flatten(), selected_players):
-        if name in player_sis:
-            sis_value = player_sis[name]
+    # Add SIS values to each facet
+    for ax, name in zip(g.axes.flatten(), df_filtered['Name'].unique()):
+        if name in df_filtered['Name'].values:
+            sis_value = df_filtered[df_filtered['Name'] == name]['SIS'].iloc[0]
             ax.text(0.95, 0.90, f'SIS: {sis_value:.2f}', transform=ax.transAxes,
                     horizontalalignment='right', verticalalignment='top',
-                    fontsize=20, bbox=dict(facecolor='white', alpha=0.5))
+                    fontsize=12, bbox=dict(facecolor='white', alpha=0.5))
 
     g.set_titles("{col_name}")
     st.pyplot(g.fig)
 
-def add_duration_since_start(df):
-    # Convert timestamps to a readable format and calculate the duration since the start
-    df['Readable Timestamp'] = pd.to_datetime(df['Timestamp (ms)'], unit='ms')
-    df['Duration Since Start'] = (df['Readable Timestamp'] - df['Readable Timestamp'].min()).dt.total_seconds() / 60
-    return df
-
 def main():
     st.title("Skating Intensity Visualization")
+
     # Load or preprocess your data here
     FILE = "data/Events-Match_Test__TEAM_A_vs__TEAM_B-Period_Period_1_Period_Period_2_Period_Period_3.csv"
     EVENT_TYPE = "Shifts"
 
-    df = read_file(FILE, EVENT_TYPE)
-    df = add_duration_since_start(df)  # Calculate 'Duration Since Start' after reading the file
-    df_with_sis = add_sis_column(df)  # Apply your function to add the SIS column
+    df = read_file(FILE, EVENT_TYPE)  # Implement your own read_file function
 
-    # Assuming 'SIS' is a column after processing, use .dropna() in case there are missing values
-    player_sis = df_with_sis['SIS'].dropna().unique()
-
-    # Time window slider (adjust as necessary)
-    time_window = st.slider("Select Time Window (minutes):", min_value=0, max_value=60, value=5, step=1)
+    df_with_sis = add_sis_column(df)  # Implement your own add_sis_column function
 
     # Player selection
-    player_options = df['Name'].unique().tolist()
-    selected_players = st.multiselect("Select Players:", options=player_options, default=player_options)
+    player_options = df_with_sis[df_with_sis['Name'].str.contains("Guest")]['Name'].unique().tolist()
+    selected_players = st.multiselect("Select Players:", options=player_options, default=player_options[:4])
+
+    # Time window slider
+    time_window = st.slider("Select Time Window (minutes):", min_value=0, max_value=130, value=60, step=1)
 
     # Display the visualization
-    plot_skating_intensity(df_with_sis, selected_players, player_sis)  # Pass the DataFrame with SIS to the plotting function
+    plot_skating_intensity(df_with_sis, selected_players, time_window)
 
 if __name__ == "__main__":
     main()
-
 
