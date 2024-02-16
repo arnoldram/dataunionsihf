@@ -79,17 +79,8 @@ def get_colour(intensity: float, min_intensity: float, max_intensity: float) -> 
     red = int(normalized_intensity * 255)
     return f"#{red:02x}{green:02x}00"
 
-def plot_shifts_with_intensity(df: pd.DataFrame, df_avg_intensities: pd.DataFrame, time_window: int):
-    """
-    Plots shifts of all players together with the intensity of all individual shifts,
-    including a color bar to represent the intensity scale from less intense (green) to more intense (red),
-    adjusted to match the specified time window on the x-axis.
 
-    :param df: DataFrame with shift data.
-    :param df_avg_intensities: DataFrame with average intensities for each shift.
-    :param time_window: How much time should be plotted? (in minutes)
-    :return: None
-    """
+def plot_shifts_with_intensity(df: pd.DataFrame, time_window: int):
     df['timestamp'] = pd.to_datetime(df['timestamp'])
     start_time = df['timestamp'].min()
     df['Time Since Start'] = (df['timestamp'] - start_time).dt.total_seconds() / 60
@@ -97,25 +88,34 @@ def plot_shifts_with_intensity(df: pd.DataFrame, df_avg_intensities: pd.DataFram
     # Filter data to include only shifts within the specified time window
     df_within_time_window = df[df['Time Since Start'] <= time_window]
 
-    # Update df_avg_intensities to only include relevant Shift_Labels
-    relevant_shift_labels = df_within_time_window['Shift_Label'].unique()
-    df_avg_intensities_filtered = df_avg_intensities[df_avg_intensities['Shift_Label'].isin(relevant_shift_labels)]
+    # Calculate the average intensity for each Shift_Label block
+    df_avg_intensities = df_within_time_window.groupby('Shift_Label')['Skating Intensity'].mean().reset_index()
 
-    min_intensity = df_avg_intensities_filtered["Skating Intensity"].min()
-    max_intensity = df_avg_intensities_filtered["Skating Intensity"].max()
+    min_intensity = df_avg_intensities["Skating Intensity"].min()
+    max_intensity = df_avg_intensities["Skating Intensity"].max()
 
     fig, ax = plt.subplots()
-    for i in df_within_time_window.index:
-        absolute_intensity = df_avg_intensities["Skating Intensity"][df["Shift_Label"][i]]
-        color = get_colour(absolute_intensity, min_intensity, max_intensity)
-        start_minute = df['Time Since Start'][i]
-        end_minute = start_minute + df['time'][i].total_seconds() / 60
 
-        ax.plot([start_minute, end_minute],
-                [df['Name'][i], df['Name'][i]],
-                linewidth=10,
-                color=color,
-                solid_capstyle="butt")
+    # Plot each shift within the time window
+    for shift_label in df_within_time_window['Shift_Label'].unique():
+        block_data = df_within_time_window[df_within_time_window['Shift_Label'] == shift_label]
+        if not block_data.empty:
+            # Get the average intensity for the current block
+            block_average_intensity = \
+            df_avg_intensities[df_avg_intensities['Shift_Label'] == shift_label]['Skating Intensity'].values[0]
+            # Get color based on the block's average intensity
+            color = get_colour(block_average_intensity, min_intensity, max_intensity)
+
+            # Plot each shift in the block with the block's color
+            for _, row in block_data.iterrows():
+                start_minute = row['Time Since Start']
+                end_minute = start_minute + row['time'].total_seconds() / 60
+
+                ax.plot([start_minute, end_minute],
+                        [row['Name'], row['Name']],
+                        linewidth=10,
+                        color=color,
+                        solid_capstyle="butt")
 
     plt.xlabel("Minutes Since Start")
     plt.ylabel("Player Name")
@@ -128,7 +128,9 @@ def plot_shifts_with_intensity(df: pd.DataFrame, df_avg_intensities: pd.DataFram
     cbar = plt.colorbar(sm, ax=ax, orientation='vertical', fraction=0.046, pad=0.04)
     cbar.set_label('Skating Intensity')
 
+    # Display the plot in Streamlit
     st.pyplot(fig)
+
 
 def find_optimal_amount_of_shifts(df: pd.DataFrame, simple: bool, verbose: bool) -> (int, pd.DataFrame):
     """
@@ -247,7 +249,7 @@ try:
     df_avg_intensities = df_filtered.groupby('Shift_Label')['Skating Intensity'].mean().reset_index()
 
     # Visualization
-    plot_shifts_with_intensity(df_filtered, df_avg_intensities, time_window)
+    plot_shifts_with_intensity(df_filtered, time_window)
 
 except ValueError as e:
     st.error(f"Error processing file: {e}")
