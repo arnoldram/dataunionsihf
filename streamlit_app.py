@@ -171,7 +171,7 @@ def add_duration_since_start(df):
     df['Duration Since Start'] = (df['Readable Timestamp'] - df['Readable Timestamp'].min()).dt.total_seconds() / 60
     return df
 
-def plot_skating_intensity(df, selected_players, time_window):
+def plot_skating_intensity(df, selected_players, start_time, end_time):
     """
     Plots skating intensity over time for selected players, excluding goalkeepers, within a specified time window.
     """
@@ -185,23 +185,23 @@ def plot_skating_intensity(df, selected_players, time_window):
     # Sorting by extracted numbers (if applicable)
     df_filtered = df_filtered.sort_values('Name Number', ignore_index=True)
 
-    # Filtering for the specified time window
-    df_filtered = df_filtered[df_filtered['Duration Since Start'] <= time_window]
-
+    # Filtering for the specified time range
+    df_filtered = df_filtered[(df_filtered['Duration Since Start'] >= start_time) &
+                              (df_filtered['Duration Since Start'] <= end_time)]
     # Creating the visualization
     g = sns.FacetGrid(df_filtered, col="Name", col_wrap=4, height=4, aspect=1.5)
 
     def draw_duration_lines(data, **kwargs):
         ax = plt.gca()
         for _, row in data.iterrows():
-            start_time = row['Duration Since Start']
+            start_time_of_shift = row['Duration Since Start']
             duration = (row['End Timestamp'] - row['Readable Timestamp']).total_seconds() / 60  # Conversion to minutes
-            end_time = start_time + duration
-            # Ensure end time is within the time window
-            if start_time <= time_window:
-                ax.vlines(x=start_time, ymin=0, ymax=row['Skating Intensity'], color='green', linestyle='-', alpha=0.7)
-                if end_time <= time_window:
-                    ax.vlines(x=end_time, ymin=0, ymax=row['Skating Intensity'], color='red', linestyle='-', alpha=0.7)
+            end_time_of_shift = start_time_of_shift + duration
+            # Ensure the shift time is within the time range
+            if start_time_of_shift >= start_time and end_time_of_shift <= end_time:
+                ax.vlines(x=start_time_of_shift, ymin=0, ymax=row['Skating Intensity'], color='green', linestyle='-', alpha=0.7)
+                ax.vlines(x=end_time_of_shift, ymin=0, ymax=row['Skating Intensity'], color='red', linestyle='-', alpha=0.7)
+
 
     g.map_dataframe(draw_duration_lines)
     g.map_dataframe(sns.scatterplot, 'Duration Since Start', 'Skating Intensity', alpha=0.7)
@@ -262,38 +262,44 @@ def main():
     selected_players = st.multiselect("Select Players:", options=player_options, default=player_options[:4])
 
     # Time window slider
-    time_window = st.slider("Select Time Window (minutes):", min_value=0, max_value=130, value=60, step=1)
+    time_window_range = st.slider(
+        "Select Time Window Range (minutes):",
+        min_value=0,
+        max_value=130,
+        value=(0, 60),  # Start- und Endwert als Tuple
+        step=1
+    )
+    start_time, end_time = time_window_range
 
     # Display the visualization
-    plot_skating_intensity(df_with_sis, selected_players, time_window)
+    plot_skating_intensity(df_with_sis, selected_players, start_time, end_time)
 
     st.markdown("""
+        ## Shift Intensity Score (SIS) Interpretation
     
-    ## Shift Intensity Score (SIS) Interpretation
-
-    The SIS provides insights into each player's performance relative to the team average. It can be interpreted as follows:
-    
-    - **SIS value of 1.00**: Indicates that the player's average shift intensity aligns precisely with the overall team's average.
-    
-    - **SIS value greater than 1.00**: Signifies that the player's shifts were more intense than the team's average intensity. A higher value suggests a greater intensity level.
-    
-    - **SIS value less than 1.00**: Implies that the player's shifts were less intense than the team's average intensity. A lower value indicates a reduced level of intensity.
-    
-    ### Examples:
-    
-    - A player with an **SIS of 0.88** had shifts that were less intense compared to the team's average.
-    - A player with an **SIS of 1.24** experienced shifts substantially more intense than the team's average.
-    
-    ### Utilization:
-    
-    These metrics are particularly valuable for:
-    
-    - **Assessing Performance**: Gauging players' activity levels and contribution during games.
-    - **Strategizing Recovery**: Identifying players who may require additional rest.
-    - **Training Adjustments**: Determining who could potentially handle increased workloads.
-    
-    By analyzing SIS values, coaches and trainers can tailor strategies to optimize both individual and team performance.
-""", unsafe_allow_html=True)
+        The SIS provides insights into each player's performance relative to the team average. It can be interpreted as follows:
+        
+        - **SIS value of 1.00**: Indicates that the player's average shift intensity aligns precisely with the overall team's average.
+        
+        - **SIS value greater than 1.00**: Signifies that the player's shifts were more intense than the team's average intensity. A higher value suggests a greater intensity level.
+        
+        - **SIS value less than 1.00**: Implies that the player's shifts were less intense than the team's average intensity. A lower value indicates a reduced level of intensity.
+        
+        ### Examples:
+        
+        - A player with an **SIS of 0.88** had shifts that were less intense compared to the team's average.
+        - A player with an **SIS of 1.24** experienced shifts substantially more intense than the team's average.
+        
+        ### Utilization:
+        
+        These metrics are particularly valuable for:
+        
+        - **Assessing Performance**: Gauging players' activity levels and contribution during games.
+        - **Strategizing Recovery**: Identifying players who may require additional rest.
+        - **Training Adjustments**: Determining who could potentially handle increased workloads.
+        
+        By analyzing SIS values, coaches and trainers can tailor strategies to optimize both individual and team performance.
+        """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
