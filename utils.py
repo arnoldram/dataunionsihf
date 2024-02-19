@@ -9,9 +9,18 @@ import requests
 from kneed import KneeLocator
 from requests.auth import HTTPBasicAuth
 from sklearn.cluster import KMeans
+import matplotlib.colors as mcolors
+import matplotlib.cm as cm
+from matplotlib.pyplot import text
+
 
 import seaborn as sns
 
+BLOCK_CONFIG_NOF_SHIFTS_DESCRIPTOR = "naive_number_of_shifts"
+BLOCK_CONFIG_VERBOSE_DESCRIPTOR = "verbose"
+BLOCK_CONFIG_TEAM_NAME_DESCRIPTOR = "team_name"
+BLOCK_CONFIG_CSV_FILE_DESCRIPTOR = "CSV_FILE"
+BLOCK_CONFIG_SAVE_PLOT_DESCRIPTOR = "PNG_FILE"
 
 def read_file(file_name: str, event_type: str) -> pd.DataFrame:
     """
@@ -99,6 +108,33 @@ def read_from_web(credential_file: str) -> pd.DataFrame:
     return pd.json_normalize(js)
 
 
+def generate_block_config(naive: bool,
+                          verbose: bool,
+                          team_name: str,
+                          file_name_raw_data: str,
+                          file_name_save_plot: str = None) -> dict:
+    """
+    Generates a block configuration for the plot_shifts_with_intensity function
+
+    :param naive: If True: Calculates number of shifts by dividing row-numbers by 5 (which is the usual number of players per shift). Otherwise, elbow-method is used. The naive approach tends to deliver better results.
+    :param verbose: Show plots and explanations leading to selection of number of shifts
+    :param team_name: Name of the team for plot description
+    :param file_name_raw_data: path to file for plot description
+    :param file_name_save_plot: If given, plot is saved to this file. Ending should be ".png".
+    :return: block configuration
+    """
+
+    block_config = {
+        BLOCK_CONFIG_NOF_SHIFTS_DESCRIPTOR: naive,
+        BLOCK_CONFIG_VERBOSE_DESCRIPTOR: verbose,
+        BLOCK_CONFIG_TEAM_NAME_DESCRIPTOR: team_name,
+        BLOCK_CONFIG_CSV_FILE_DESCRIPTOR: file_name_raw_data,
+        BLOCK_CONFIG_SAVE_PLOT_DESCRIPTOR: file_name_save_plot
+    }
+
+    return block_config
+
+
 def get_colour(intensity: int) -> str:
     """
     creates a colour between green and red  according to intensity
@@ -115,9 +151,12 @@ def get_colour(intensity: int) -> str:
     return colour
 
 
-def plot_shifts(df: pd.DataFrame, time_window: int):
+def plot_shifts(df: pd.DataFrame,
+                starting_minute: int,
+                time_window: int,
+                block_config: dict):
     """
-    Plots shifts of all players together with the intensity of all individual shifts
+    Creates plot with shifts of all players together with the intensity of all individual shifts
 
     df requires 3 columns:
         timestamp: datetime -> start of a shift of a player
@@ -125,37 +164,62 @@ def plot_shifts(df: pd.DataFrame, time_window: int):
         relative_intensity: float -> a relative intensity of a shift for a player between 0 and 1
 
     :param df: dataframe with shift data
+    :param starting_minute:  What minute (in-game-time) does the plot start?
     :param time_window:  how much time should be plotted? (in minutes)
-    :return: None
+    :return: plot
     """
 
     # create plot
     fig, ax = plt.subplots()
 
+    # create correct time formats
+    start_time = df['timestamp'].min()
+    df['Time Since Start'] = (df['timestamp'] - start_time).dt.total_seconds() / 60
+
     # plot bars
     for i in df.index:
-        ax.plot([df['timestamp'][i], df['timestamp'][i] + df['time'][i]],
-                [df['Name'][i], df['Name'][i]],
+        start_minute = df['Time Since Start'][i]
+        end_minute = start_minute + df['time'][i].total_seconds() / 60
+
+        ax.plot([start_minute, end_minute],
+                [df['Player ID'][i], df['Player ID'][i]],
                 linewidth=10,
                 c=get_colour(df["relative_intensity"][i]),
                 solid_capstyle="butt")
 
+        text(start_minute, df['Player ID'][i], df['Shift_Label'][i], fontsize=9, ha='left', va='center', color='black')
+
     # format date on x axis
-    myFmt = mdates.DateFormatter('%H:%M:%S')
-    ax.xaxis.set_major_formatter(myFmt)
-    plt.xticks(rotation=90)
-    plt.xlim(df["timestamp"].min(), df["timestamp"].min() + datetime.timedelta(minutes=time_window))
+    plt.xlim(starting_minute, starting_minute + time_window)
 
     # some configurations for background
     ax.grid(axis="y", color="r")
     ax.set(frame_on=False)
 
     # label axes
-    plt.xlabel("Time")
-    plt.ylabel("Player Name")
-    plt.title("Intensity of Shifts of Ice Hockey Players ")
+    if block_config and BLOCK_CONFIG_TEAM_NAME_DESCRIPTOR in block_config:
+        plt.title(f"Intensity of Shifts of Ice Hockey Players from team: {block_config[BLOCK_CONFIG_TEAM_NAME_DESCRIPTOR]}")
+    else:
+        plt.title("Intensity of Shifts of Ice Hockey Players ")
 
-    # display plot
+    if block_config and BLOCK_CONFIG_CSV_FILE_DESCRIPTOR in block_config:
+        plt.xlabel(f"In-Game Minute\n\nPlot generated using file:\n {block_config[BLOCK_CONFIG_CSV_FILE_DESCRIPTOR]})")
+    else:
+        plt.xlabel("In-Game Minute")
+
+    plt.ylabel("Player Name")
+
+    # Add legend for intensity
+    norm = mcolors.Normalize(vmin=df["relative_intensity"].min(), vmax=df["relative_intensity"].max())
+    sm = cm.ScalarMappable(norm=norm, cmap=cm.RdYlGn_r)
+    sm.set_array([])
+    cbar = plt.colorbar(sm, ax=ax, orientation='vertical', fraction=0.046, pad=0.04)
+    cbar.set_label('Skating Intensity')
+
+    # Save plot if file_name_save_plot is given
+    if block_config and BLOCK_CONFIG_SAVE_PLOT_DESCRIPTOR in block_config and block_config[BLOCK_CONFIG_SAVE_PLOT_DESCRIPTOR]:
+        plt.savefig(block_config[BLOCK_CONFIG_SAVE_PLOT_DESCRIPTOR],dpi=300, bbox_inches = "tight")
+
     plt.show()
 
 
@@ -165,7 +229,7 @@ def plot_shifts_with_intensity(df: pd.DataFrame,
                                intensity_indicator: str = "Skating Intensity",
                                block_config: dict = None):
     """
-    Plots shifts of all players together with the intensity of all individual shifts.
+    Creates plot with shifts of all players together with the intensity of all individual shifts.
 
     ============================================
 
@@ -176,14 +240,7 @@ def plot_shifts_with_intensity(df: pd.DataFrame,
     ============================================
 
     Explanation block_config:
-
-    dict {
-        "naive_number_of_shifts": True,
-        "verbose": False
-    }
-
-    naive_number_of_shifts -> If True: Calculates number of shifts by dividing row-numbers by 5 (which is the usual number of players per shift). Otherwise, elbow-method is used. The naive approach tends to deliver better results.
-    verbose -> Show plots and explanations leading to selection of number of shifts
+        Use generate_block_config() to create a block_config.
 
     ============================================
 
@@ -192,7 +249,7 @@ def plot_shifts_with_intensity(df: pd.DataFrame,
     :param time_window_duration: duration of time window to be analysed (in minutes). Default = 5
     :param intensity_indicator:  Which column should be used as intensity indicator? Default = Skating Intensity
     :param block_config:  Configuration how to find players per shift. If None, then intensities for individual player are plotted.
-    :return: final dataset that was plotted
+    :return: the final dataset that was plotted
     """
     # TODO: convert timestamp to in-game time
     # TODO: find period breaks automatically
@@ -203,7 +260,7 @@ def plot_shifts_with_intensity(df: pd.DataFrame,
     df_plot["time"] = pd.to_timedelta(df["Duration (s)"], unit="sec")
     df_plot["Timestamp (ms)"] = df["Timestamp (ms)"]  # Necessary for plots
     df_plot["Duration (s)"] = df["Duration (s)"]  # Necessary for plots
-    df_plot["Name"] = df["Name"]
+    df_plot["Player ID"] = df["Player ID"].astype(str)  # Necessary for plots
     df_plot[intensity_indicator] = df[intensity_indicator]
 
     # filter time frame
@@ -247,9 +304,13 @@ def plot_shifts_with_intensity(df: pd.DataFrame,
         df_plot["relative_intensity"] = df_plot[intensity_indicator] - df_plot[intensity_indicator].min()
         df_plot["relative_intensity"] /= df_plot["relative_intensity"].max()
 
-    plot_shifts(df_plot, time_window_duration)
+    fig = plot_shifts(df_plot,
+                      time_window_start,
+                      time_window_duration,
+                      block_config)
 
-    return df_plot
+
+    return df_plot, fig
 
 
 def find_optimal_amount_of_shifts(df: pd.DataFrame, simple: bool, verbose: bool) -> (int, pd.DataFrame):
