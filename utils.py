@@ -204,8 +204,7 @@ def plot_shifts(df: pd.DataFrame,
                              df["block_intensity"].max()),
                 solid_capstyle="butt")
 
-        if block_config:
-            text(start_minute, df['Player ID'][i], df['Shift_Label'][i], fontsize=9, ha='left', va='center', color='black')
+        text(start_minute, df['Player ID'][i], df['Shift_Label'][i], fontsize=9, ha='left', va='center', color='black')
 
     # format date on x axis
     plt.xlim(starting_minute, starting_minute + time_window)
@@ -215,12 +214,12 @@ def plot_shifts(df: pd.DataFrame,
     ax.set(frame_on=False)
 
     # label axes
-    if block_config and BLOCK_CONFIG_TEAM_NAME_DESCRIPTOR in block_config:
+    if BLOCK_CONFIG_TEAM_NAME_DESCRIPTOR in block_config:
         plt.title(f"Intensity of Shifts of Ice Hockey Players from team: {block_config[BLOCK_CONFIG_TEAM_NAME_DESCRIPTOR]}")
     else:
         plt.title("Intensity of Shifts of Ice Hockey Players ")
 
-    if block_config and BLOCK_CONFIG_CSV_FILE_DESCRIPTOR in block_config:
+    if BLOCK_CONFIG_CSV_FILE_DESCRIPTOR in block_config:
         plt.xlabel(f"In-Game Minute\n\nPlot generated using file:\n {block_config[BLOCK_CONFIG_CSV_FILE_DESCRIPTOR]})")
     else:
         plt.xlabel("In-Game Minute")
@@ -235,17 +234,18 @@ def plot_shifts(df: pd.DataFrame,
     cbar.set_label('Skating Intensity')
 
     # Save plot if file_name_save_plot is given
-    if block_config and BLOCK_CONFIG_SAVE_PLOT_DESCRIPTOR in block_config and block_config[BLOCK_CONFIG_SAVE_PLOT_DESCRIPTOR]:
+    if BLOCK_CONFIG_SAVE_PLOT_DESCRIPTOR in block_config and block_config[BLOCK_CONFIG_SAVE_PLOT_DESCRIPTOR]:
         plt.savefig(block_config[BLOCK_CONFIG_SAVE_PLOT_DESCRIPTOR],dpi=300, bbox_inches = "tight")
 
     plt.show()
 
 
 def plot_shifts_with_intensity(df: pd.DataFrame,
+                               block_config: dict,
                                time_window_start: int = 0,
                                time_window_duration: int = 5,
-                               intensity_indicator: str = "Skating Intensity",
-                               block_config: dict = None):
+                               intensity_indicator: str = "Skating Intensity"
+                               ):
     """
     Creates plot with shifts of all players together with the intensity of all individual shifts.
 
@@ -287,38 +287,32 @@ def plot_shifts_with_intensity(df: pd.DataFrame,
     df_plot = df_plot[
         df_plot["timestamp"] >= df_plot["timestamp"].min() + datetime.timedelta(minutes=time_window_start)]
 
-    # calculate relative intensities
-    if block_config:
-        # Calculate relativ intensities by block
-        nof_shifts, data = find_optimal_amount_of_shifts(df_plot,
-                                                         block_config["naive_number_of_shifts"],
-                                                         block_config["verbose"])
+    # Calculate relativ intensities by block
+    nof_shifts, data = find_optimal_amount_of_shifts(df_plot,
+                                                     block_config["naive_number_of_shifts"],
+                                                     block_config["verbose"])
 
-        # Find actual shifts using the calculated number of shifts
-        kmeans = KMeans(n_clusters=nof_shifts)
-        kmeans.fit(data)
+    # Find actual shifts using the calculated number of shifts
+    kmeans = KMeans(n_clusters=nof_shifts)
+    kmeans.fit(data)
 
-        # add labels to dataframe
-        df_plot["Shift_Label"] = kmeans.labels_
+    # add labels to dataframe
+    df_plot["Shift_Label"] = kmeans.labels_
 
-        if block_config["verbose"]:
-            print("Summary of all Shifts. Points are the individual players. Colors are their blocks.")
-            plt.scatter(df_plot["Timestamp (ms)"], df_plot["Duration (s)"], c=kmeans.labels_)
-            plt.xlabel("Start of shift")
-            plt.ylabel("Duration of shift")
-            plt.title("Shifts of all players")
-            plt.show()
+    if block_config["verbose"]:
+        print("Summary of all Shifts. Points are the individual players. Colors are their blocks.")
+        plt.scatter(df_plot["Timestamp (ms)"], df_plot["Duration (s)"], c=kmeans.labels_)
+        plt.xlabel("Start of shift")
+        plt.ylabel("Duration of shift")
+        plt.title("Shifts of all players")
+        plt.show()
 
-        # calculate relative intensities per block
-        df_shift_intensities = df_plot.groupby("Shift_Label")[intensity_indicator].mean().reset_index().set_index(
-            "Shift_Label")
-        df_plot['block_intensity'] = df_plot['Shift_Label'].apply(
-            lambda x: df_shift_intensities[intensity_indicator][x])
-        df_plot["block_intensity"] /= 100.0
-    else:
-        # calculate relative intensities by player
-        df_plot["block_intensity"] = df_plot[intensity_indicator] - df_plot[intensity_indicator].min()
-        df_plot["block_intensity"] /= df_plot["block_intensity"].max()
+    # calculate relative intensities per block
+    df_shift_intensities = df_plot.groupby("Shift_Label")[intensity_indicator].mean().reset_index().set_index(
+        "Shift_Label")
+    df_plot['block_intensity'] = df_plot['Shift_Label'].apply(
+        lambda x: df_shift_intensities[intensity_indicator][x])
+    df_plot["block_intensity"] /= 100.0
 
     fig = plot_shifts(df_plot,
                       time_window_start,
