@@ -151,6 +151,21 @@ def get_colour(intensity: int) -> str:
     return colour
 
 
+def get_colour(intensity: float, min_intensity: float, max_intensity: float) -> str:
+    """
+    Creates a colour between green and red according to intensity, where green is less intense and red is more intense.
+
+    :param intensity: The absolute intensity value.
+    :param min_intensity: The minimum intensity value for normalization.
+    :param max_intensity: The maximum intensity value for normalization.
+    :return: A hex color string, linearly interpolated between green (less intense) and red (more intense).
+    """
+    normalized_intensity = (intensity - min_intensity) / (max_intensity - min_intensity)
+    green = int((1 - normalized_intensity) * 255)
+    red = int(normalized_intensity * 255)
+    return f"#{red:02x}{green:02x}00"
+
+
 def plot_shifts(df: pd.DataFrame,
                 starting_minute: int,
                 time_window: int,
@@ -161,7 +176,7 @@ def plot_shifts(df: pd.DataFrame,
     df requires 3 columns:
         timestamp: datetime -> start of a shift of a player
         time: timedelta -> duration of a shift of a player in seconds
-        relative_intensity: float -> a relative intensity of a shift for a player between 0 and 1
+        block_intensity: float -> a relative intensity of a shift for a player between 0 and 1
 
     :param df: dataframe with shift data
     :param starting_minute:  What minute (in-game-time) does the plot start?
@@ -184,10 +199,13 @@ def plot_shifts(df: pd.DataFrame,
         ax.plot([start_minute, end_minute],
                 [df['Player ID'][i], df['Player ID'][i]],
                 linewidth=10,
-                c=get_colour(df["relative_intensity"][i]),
+                c=get_colour(df["block_intensity"][i],
+                             df["block_intensity"].min(),
+                             df["block_intensity"].max()),
                 solid_capstyle="butt")
 
-        text(start_minute, df['Player ID'][i], df['Shift_Label'][i], fontsize=9, ha='left', va='center', color='black')
+        if block_config:
+            text(start_minute, df['Player ID'][i], df['Shift_Label'][i], fontsize=9, ha='left', va='center', color='black')
 
     # format date on x axis
     plt.xlim(starting_minute, starting_minute + time_window)
@@ -210,7 +228,7 @@ def plot_shifts(df: pd.DataFrame,
     plt.ylabel("Player Name")
 
     # Add legend for intensity
-    norm = mcolors.Normalize(vmin=df["relative_intensity"].min(), vmax=df["relative_intensity"].max())
+    norm = mcolors.Normalize(vmin=df["block_intensity"].min(), vmax=df["block_intensity"].max())
     sm = cm.ScalarMappable(norm=norm, cmap=cm.RdYlGn_r)
     sm.set_array([])
     cbar = plt.colorbar(sm, ax=ax, orientation='vertical', fraction=0.046, pad=0.04)
@@ -294,15 +312,13 @@ def plot_shifts_with_intensity(df: pd.DataFrame,
         # calculate relative intensities per block
         df_shift_intensities = df_plot.groupby("Shift_Label")[intensity_indicator].mean().reset_index().set_index(
             "Shift_Label")
-        df_plot['relative_intensity'] = df_plot['Shift_Label'].apply(
+        df_plot['block_intensity'] = df_plot['Shift_Label'].apply(
             lambda x: df_shift_intensities[intensity_indicator][x])
-        df_plot["relative_intensity"] -= df_plot["relative_intensity"].min()
-        df_plot["relative_intensity"] /= df_plot["relative_intensity"].max()
-
+        df_plot["block_intensity"] /= 100.0
     else:
         # calculate relative intensities by player
-        df_plot["relative_intensity"] = df_plot[intensity_indicator] - df_plot[intensity_indicator].min()
-        df_plot["relative_intensity"] /= df_plot["relative_intensity"].max()
+        df_plot["block_intensity"] = df_plot[intensity_indicator] - df_plot[intensity_indicator].min()
+        df_plot["block_intensity"] /= df_plot["block_intensity"].max()
 
     fig = plot_shifts(df_plot,
                       time_window_start,

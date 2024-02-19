@@ -7,6 +7,7 @@ from sklearn.cluster import KMeans
 from datetime import datetime
 from io import StringIO
 from kneed import KneeLocator
+import utils
 
 
 def read_file(file_name: str, event_type: str) -> pd.DataFrame:
@@ -65,20 +66,6 @@ def read_file(file_name: str, event_type: str) -> pd.DataFrame:
 
     return df
 
-def get_colour(intensity: float, min_intensity: float, max_intensity: float) -> str:
-    """
-    Creates a colour between green and red according to intensity, where green is less intense and red is more intense.
-
-    :param intensity: The absolute intensity value.
-    :param min_intensity: The minimum intensity value for normalization.
-    :param max_intensity: The maximum intensity value for normalization.
-    :return: A hex color string, linearly interpolated between green (less intense) and red (more intense).
-    """
-    normalized_intensity = (intensity - min_intensity) / (max_intensity - min_intensity)
-    green = int((1 - normalized_intensity) * 255)
-    red = int(normalized_intensity * 255)
-    return f"#{red:02x}{green:02x}00"
-
 
 def plot_shifts_with_intensity(df: pd.DataFrame, time_window: int):
     df['timestamp'] = pd.to_datetime(df['timestamp'])
@@ -104,7 +91,7 @@ def plot_shifts_with_intensity(df: pd.DataFrame, time_window: int):
             block_average_intensity = \
             df_avg_intensities[df_avg_intensities['Shift_Label'] == shift_label]['Skating Intensity'].values[0]
             # Get color based on the block's average intensity
-            color = get_colour(block_average_intensity, min_intensity, max_intensity)
+            color = utils.get_colour(block_average_intensity, min_intensity, max_intensity)
 
             # Plot each shift in the block with the block's color
             for _, row in block_data.iterrows():
