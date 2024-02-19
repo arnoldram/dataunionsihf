@@ -240,6 +240,34 @@ def plot_shifts(df: pd.DataFrame,
     plt.show()
 
 
+def order_block_labels(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Orders the block labels in the DataFrame such that smallest label number is the first shift to happen.
+
+    :param df: DataFrame containing shift data with a 'Shift_Label' column.
+    :return: The original DataFrame with the 'Shift_Label' column ordered by the average intensity of each block.
+    """
+
+    new_label = 1
+    old_label = df['Shift_Label'].iloc[0]
+    label_mapping = {
+        old_label: new_label
+    }
+
+    for label in df["Shift_Label"]:
+        if label == old_label:
+            continue
+        else:
+            new_label += 1
+            old_label = label
+            label_mapping[old_label] = new_label
+
+    # Map the old block labels to the new block labels
+    df['Shift_Label'] = df['Shift_Label'].map(label_mapping)
+
+    return df
+
+
 def plot_shifts_with_intensity(df: pd.DataFrame,
                                block_config: dict,
                                time_window_start: int = 0,
@@ -307,12 +335,13 @@ def plot_shifts_with_intensity(df: pd.DataFrame,
         plt.title("Shifts of all players")
         plt.show()
 
-    # calculate relative intensities per block
+    # calculate block intensity
     df_shift_intensities = df_plot.groupby("Shift_Label")[intensity_indicator].mean().reset_index().set_index(
         "Shift_Label")
     df_plot['block_intensity'] = df_plot['Shift_Label'].apply(
         lambda x: df_shift_intensities[intensity_indicator][x])
     df_plot["block_intensity"] /= 100.0
+    df_plot = order_block_labels(df_plot)
 
     fig = plot_shifts(df_plot,
                       time_window_start,
