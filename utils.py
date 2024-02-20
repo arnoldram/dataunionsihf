@@ -483,6 +483,20 @@ def plot_skating_intensity(df, selected_players, start_time, end_time):
                               (df_filtered['Duration Since Start'] <= end_time)]
     # Creating the visualization
     g = sns.FacetGrid(df_filtered, col="Name", col_wrap=4, height=4, aspect=1.5)
+    plt.figtext(0, -0.05, "Shift Intensity Score (SIS) Calculation and Interpretation:", ha='left', fontsize=14,
+                fontweight='bold')
+    plt.figtext(0, -0.1, """
+        - Average Shift Intensity: Calculated by dividing the sum of intensity values of the shift by the number of measurements in the shift.
+        - Average Player Intensity: Calculated by dividing the sum of the player's average shift intensities by the number of shifts of the player.
+        - Overall Average Shift Intensity: Calculated by dividing the sum of the average shift intensities of all players by the number of all shifts of all players.
+        - SIS: The SIS for each player is determined by dividing the Average Player Intensity by the Overall Average Shift Intensity.""", ha='left', fontsize=14)
+    plt.figtext(0, -0.125, "Interpretation:", ha='left', fontsize=14,
+                fontweight='bold')
+    plt.figtext(0, -0.175, """
+        - SIS value of 1.00: Player's average shift intensity aligns with the overall team's average.
+        - SIS > 1.00: Player's shifts were more intense than the team's average. Higher values indicate greater intensity.
+        - SIS < 1.00: Player's shifts were less intense than the team's average. Lower values indicate reduced intensity.
+        """, ha='left', fontsize=14)
 
     def draw_duration_lines(data, **kwargs):
         ax = plt.gca()
