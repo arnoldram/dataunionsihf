@@ -89,7 +89,50 @@ See the `sample_analysis.ipynb` for an example on how to use these functions.
 
 ### Shift intensity score (SIS)
 
-TODO: Andri
+To analyze skating intensity and visualize the results for specific players, use `utils.plot_skating_intensity()`.
 
+This function requires a preprocessed DataFrame and parameters for player selection and the time window of interest. The DataFrame should include columns for `'Timestamp (ms)', 'Name', 'Skating Intensity', 'End Timestamp', and 'Readable Timestamp'`.
 
+**Quick Setup**
+- **Prepare your data** with `utils.read_file(FILE, EVENT_TYPE)` to load player shift events from a CSV file.
+- **Calculate the Shift Intensity Score (SIS)** for each player by adding an SIS column to your DataFrame with `utils.add_sis_column(df)`.
+- **Select players and set the time window** for analysis. Example: Select players named "Guest" and set a time window from 0 to 130 minutes.
+- **Plot the intensity** with `utils.plot_skating_intensity(df_with_sis, selected_players, start_time, end_time)` to visualize skating intensity over time, excluding goalkeepers.
 
+For a step-by-step guide and examples on how to use these functions, refer to `sample_analysis.ipynb`.
+
+## Understanding Shift Intensity Score (SIS)
+
+The Shift Intensity Score (SIS) is a pivotal metric derived from skating intensity data, providing insights into a player's performance by comparing their shift intensity with the team's average. Below is the methodology for calculating SIS and its implications for performance analysis.
+
+### SIS Calculation Steps
+
+1. **Average Shift Intensity:** Calculate the average intensity for each player's shift by summing up the intensity values during a shift and dividing by the number of measurements within that shift.
+
+   <img src="https://latex.codecogs.com/svg.image?\inline&space;\text{\textbf{Average&space;Shift&space;Intensity}}=\frac{\sum(\text{Intensity&space;values&space;of&space;the&space;shift})}{\text{Number&space;of&space;measurements&space;in&space;the&space;shift}}" title="\text{\textbf{Average Shift Intensity}}=\frac{\sum(\text{Intensity values of the shift})}{\text{Number of measurements in the shift}}" />
+
+2. **Average Player Intensity:** Determine the average intensity across all shifts for each player by summing the average intensities of all shifts for a player and dividing by the total number of shifts.
+
+   <img src="https://latex.codecogs.com/svg.image?\inline&space;\text{\textbf{Average&space;Player&space;Intensity}}=\frac{\sum(\text{Average&space;shift&space;intensities&space;of&space;the&space;player})}{\text{Number&space;of&space;shifts&space;of&space;the&space;player}}" title="\text{\textbf{Average Player Intensity}}=\frac{\sum(\text{Average shift intensities of the player})}{\text{Number of shifts of the player}}" />
+
+3. **Overall Average Shift Intensity:** Calculate the team-wide average intensity by summing the average shift intensities of all players and dividing by the total number of shifts across all players.
+
+   <img src="https://latex.codecogs.com/svg.image?\inline&space;\text{\textbf{Overall&space;Average&space;Shift&space;Intensity}}=\frac{\sum(\text{Average&space;shift&space;intensities&space;of&space;all&space;players})}{\text{Number&space;of&space;all&space;shifts&space;of&space;all&space;players}}" title="\text{\textbf{Overall Average Shift Intensity}}=\frac{\sum(\text{Average shift intensities of all players})}{\text{Number of all shifts of all players}}" />
+
+4. **Shift Intensity Score (SIS):** Finally, determine the SIS for each player by dividing their average player intensity by the overall average shift intensity.
+
+   <img src="https://latex.codecogs.com/svg.image?\inline&space;\text{\textbf{SIS}}=\frac{\text{Average&space;Player&space;Intensity}}{\text{Overall&space;Average&space;Shift&space;Intensity}}" title="\text{\textbf{SIS}}=\frac{\text{Average Player Intensity}}{\text{Overall Average Shift Intensity}}" />
+
+### Interpretation of SIS
+
+- **SIS Value of 1.00:** Indicates the player's average shift intensity aligns exactly with the team's overall average.
+- **SIS Greater Than 1.00:** Signifies that the player's shifts were more intense than the team's average intensity, suggesting higher performance or exertion levels.
+- **SIS Less Than 1.00:** Implies the player's shifts were less intense than the team's average intensity, suggesting lower performance or exertion levels.
+
+### Practical Applications
+
+- **Performance Assessment:** Utilizing SIS helps in identifying players with higher or lower intensity levels, offering insights into their contributions during games.
+- **Recovery Strategies:** Players with higher SIS values might require more recovery time due to their higher exertion levels.
+- **Training Adjustments:** SIS can guide the adjustments in training workloads to optimize both individual and team performance.
+
+Leveraging SIS allows coaches and trainers to make informed decisions to enhance team strategy and player development.
