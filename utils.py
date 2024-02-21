@@ -182,7 +182,8 @@ def plot_shifts(df: pd.DataFrame,
     :param df: dataframe with shift data
     :param starting_minute:  What minute (in-game-time) does the plot start?
     :param time_window:  how much time should be plotted? (in minutes)
-    :return: plot
+    :param block_config:  initial block config for labelling the plot
+    :return: None
     """
 
     # create plot
@@ -238,6 +239,91 @@ def plot_shifts(df: pd.DataFrame,
     # Save plot if file_name_save_plot is given
     if BLOCK_CONFIG_SAVE_PLOT_DESCRIPTOR in block_config and block_config[BLOCK_CONFIG_SAVE_PLOT_DESCRIPTOR]:
         plt.savefig(block_config[BLOCK_CONFIG_SAVE_PLOT_DESCRIPTOR], dpi=300, bbox_inches="tight")
+
+    plt.show()
+
+
+def plot_SIS(df: pd.DataFrame,
+             starting_minute: int,
+             time_window: int,
+             team_name: str = None,
+             file_name_raw_data: str = None,
+             file_name_save_plot: str = None):
+    """
+    Creates plot with shifts of all players together with the intensity of all individual shifts
+
+    df requires 3 columns:
+        timestamp: datetime -> start of a shift of a player
+        time: timedelta -> duration of a shift of a player in seconds
+        SIS: float -> a relative intensity of a shift for a player between 0 and 1
+
+    :param df: dataframe with shift data
+    :param starting_minute:  What minute (in-game-time) does the plot start?
+    :param time_window:  how much time should be plotted? (in minutes)
+    :param team_name: team name for plot labelling
+    :param file_name_raw_data: path to file for plot description
+    :param file_name_save_plot: If given, plot is saved to this file. Ending should be ".png".
+    :return:
+    """
+
+    # create plot
+    fig, ax = plt.subplots()
+
+    # create correct time formats
+    df["timestamp"] = pd.to_datetime(df["Timestamp (ms)"], unit="ms")
+    df["time"] = pd.to_timedelta(df["Duration (s)"], unit="sec")
+    start_time = df['timestamp'].min()
+    df['Time Since Start'] = (df['timestamp'] - start_time).dt.total_seconds() / 60
+
+    # plot bars
+    for i in df.index:
+        start_minute = df['Time Since Start'][i]
+        end_minute = start_minute + df['time'][i].total_seconds() / 60
+
+        if end_minute > starting_minute + time_window:
+            continue
+
+        ax.plot([start_minute, end_minute],
+                [str(df['Player ID'][i]), str(df['Player ID'][i])],
+                linewidth=10,
+                c=get_colour(df["SIS"][i],
+                             df["SIS"].min(),
+                             df["SIS"].max()),
+                solid_capstyle="butt")
+
+        text(start_minute, str(df['Player ID'][i]), df['Shift_Label'][i], fontsize=9, ha='left', va='center', color='black')
+
+    # format date on x axis
+    plt.xlim(starting_minute, starting_minute + time_window)
+
+    # some configurations for background
+    ax.grid(axis="y", color="r")
+    ax.set(frame_on=False)
+
+    # label axes
+    if team_name:
+        plt.title(
+            f"SIS of Ice Hockey Players from team: {team_name}")
+    else:
+        plt.title("SIS of Ice Hockey Players ")
+
+    if file_name_raw_data:
+        plt.xlabel(f"In-Game Minute\n\nPlot generated using file:\n {file_name_raw_data})")
+    else:
+        plt.xlabel("In-Game Minute")
+
+    plt.ylabel("Player ID")
+
+    # Add legend for intensity
+    norm = mcolors.Normalize(vmin=df["SIS"].min(), vmax=df["SIS"].max())
+    sm = cm.ScalarMappable(norm=norm, cmap=cm.RdYlGn_r)
+    sm.set_array([])
+    cbar = plt.colorbar(sm, ax=ax, orientation='vertical', fraction=0.046, pad=0.04)
+    cbar.set_label('SIS')
+
+    # Save plot if file_name_save_plot is given
+    if file_name_save_plot:
+        plt.savefig(file_name_save_plot, dpi=300, bbox_inches="tight")
 
     plt.show()
 
