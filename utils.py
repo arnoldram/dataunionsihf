@@ -226,7 +226,7 @@ def plot_shifts(df: pd.DataFrame,
     else:
         plt.xlabel("In-Game Minute")
 
-    plt.ylabel("Player Name")
+    plt.ylabel("Player ID")
 
     # Add legend for intensity
     norm = mcolors.Normalize(vmin=df["block_intensity"].min(), vmax=df["block_intensity"].max())
@@ -345,12 +345,12 @@ def plot_shifts_with_intensity(df: pd.DataFrame,
     df_plot["block_intensity"] /= 100.0
     df_plot = order_block_labels(df_plot)
 
-    fig = plot_shifts(df_plot,
-                      time_window_start,
-                      time_window_duration,
-                      block_config)
+    plot_shifts(df_plot,
+                time_window_start,
+                time_window_duration,
+                block_config)
 
-    return df_plot, fig
+    return df_plot
 
 
 def find_optimal_amount_of_shifts(df: pd.DataFrame, simple: bool, verbose: bool) -> (int, pd.DataFrame):
