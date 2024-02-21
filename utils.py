@@ -13,7 +13,6 @@ import matplotlib.colors as mcolors
 import matplotlib.cm as cm
 from matplotlib.pyplot import text
 
-
 import seaborn as sns
 
 BLOCK_CONFIG_NOF_SHIFTS_DESCRIPTOR = "naive_number_of_shifts"
@@ -21,6 +20,7 @@ BLOCK_CONFIG_VERBOSE_DESCRIPTOR = "verbose"
 BLOCK_CONFIG_TEAM_NAME_DESCRIPTOR = "team_name"
 BLOCK_CONFIG_CSV_FILE_DESCRIPTOR = "CSV_FILE"
 BLOCK_CONFIG_SAVE_PLOT_DESCRIPTOR = "PNG_FILE"
+
 
 def read_file(file_name: str, event_type: str) -> pd.DataFrame:
     """
@@ -95,7 +95,8 @@ def read_from_web(credential_file: str) -> pd.DataFrame:
     headers = {'Accept': 'application/json',
                "Authorization": credentials["API_KEY"]}
     auth = HTTPBasicAuth(credentials["USER"], credentials["PASSWORD"])
-    url = "https://elverum-api-test.access.kinexon.com/public/v1/events/shift/player/in-entity/session/latest?apiKey=" + credentials["API_KEY"]
+    url = "https://elverum-api-test.access.kinexon.com/public/v1/events/shift/player/in-entity/session/latest?apiKey=" + \
+          credentials["API_KEY"]
 
     # download data
     req = requests.get(url,
@@ -215,7 +216,8 @@ def plot_shifts(df: pd.DataFrame,
 
     # label axes
     if BLOCK_CONFIG_TEAM_NAME_DESCRIPTOR in block_config:
-        plt.title(f"Intensity of Shifts of Ice Hockey Players from team: {block_config[BLOCK_CONFIG_TEAM_NAME_DESCRIPTOR]}")
+        plt.title(
+            f"Intensity of Shifts of Ice Hockey Players from team: {block_config[BLOCK_CONFIG_TEAM_NAME_DESCRIPTOR]}")
     else:
         plt.title("Intensity of Shifts of Ice Hockey Players ")
 
@@ -235,7 +237,7 @@ def plot_shifts(df: pd.DataFrame,
 
     # Save plot if file_name_save_plot is given
     if BLOCK_CONFIG_SAVE_PLOT_DESCRIPTOR in block_config and block_config[BLOCK_CONFIG_SAVE_PLOT_DESCRIPTOR]:
-        plt.savefig(block_config[BLOCK_CONFIG_SAVE_PLOT_DESCRIPTOR],dpi=300, bbox_inches = "tight")
+        plt.savefig(block_config[BLOCK_CONFIG_SAVE_PLOT_DESCRIPTOR], dpi=300, bbox_inches="tight")
 
     plt.show()
 
@@ -348,7 +350,6 @@ def plot_shifts_with_intensity(df: pd.DataFrame,
                       time_window_duration,
                       block_config)
 
-
     return df_plot, fig
 
 
@@ -398,6 +399,7 @@ def find_optimal_amount_of_shifts(df: pd.DataFrame, simple: bool, verbose: bool)
 
     return nof_shifts, data
 
+
 def add_sis_column(df):
     """
     Adds a 'SIS' (Shift Intensity Score) column to the DataFrame for guest players excluding goalkeepers.
@@ -445,6 +447,7 @@ def add_sis_column(df):
 
     return df_filtered
 
+
 def add_duration_since_start(df):
     """
     Adds a 'Duration Since Start' column to the dataframe based on 'Timestamp (ms)'.
@@ -453,6 +456,7 @@ def add_duration_since_start(df):
     df['End Timestamp'] = df['Readable Timestamp'] + pd.to_timedelta(df['Duration (s)'], unit='s')
     df['Duration Since Start'] = (df['Readable Timestamp'] - df['Readable Timestamp'].min()).dt.total_seconds() / 60
     return df
+
 
 def plot_skating_intensity(df, selected_players, start_time, end_time):
     """
@@ -489,7 +493,8 @@ def plot_skating_intensity(df, selected_players, start_time, end_time):
         - Average Shift Intensity: Calculated by dividing the sum of intensity values of the shift by the number of measurements in the shift.
         - Average Player Intensity: Calculated by dividing the sum of the player's average shift intensities by the number of shifts of the player.
         - Overall Average Shift Intensity: Calculated by dividing the sum of the average shift intensities of all players by the number of all shifts of all players.
-        - SIS: The SIS for each player is determined by dividing the Average Player Intensity by the Overall Average Shift Intensity.""", ha='left', fontsize=14)
+        - SIS: The SIS for each player is determined by dividing the Average Player Intensity by the Overall Average Shift Intensity.""",
+                ha='left', fontsize=14)
     plt.figtext(0, -0.125, "Interpretation:", ha='left', fontsize=14,
                 fontweight='bold')
     plt.figtext(0, -0.175, """
@@ -506,9 +511,10 @@ def plot_skating_intensity(df, selected_players, start_time, end_time):
             end_time_of_shift = start_time_of_shift + duration
             # Ensure the shift time is within the time range
             if start_time_of_shift >= start_time and end_time_of_shift <= end_time:
-                ax.vlines(x=start_time_of_shift, ymin=0, ymax=row['Skating Intensity'], color='green', linestyle='-', alpha=0.7)
-                ax.vlines(x=end_time_of_shift, ymin=0, ymax=row['Skating Intensity'], color='red', linestyle='-', alpha=0.7)
-
+                ax.vlines(x=start_time_of_shift, ymin=0, ymax=row['Skating Intensity'], color='green', linestyle='-',
+                          alpha=0.7)
+                ax.vlines(x=end_time_of_shift, ymin=0, ymax=row['Skating Intensity'], color='red', linestyle='-',
+                          alpha=0.7)
 
     g.map_dataframe(draw_duration_lines)
     g.map_dataframe(sns.scatterplot, 'Duration Since Start', 'Skating Intensity', alpha=0.7)
