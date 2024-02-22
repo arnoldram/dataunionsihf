@@ -1,8 +1,9 @@
-pandas
-numpy
-matplotlib
-seaborn
 jupyter
-scikit-learn
 kneed
+matplotlib
+numpy
 oceanlib
+pandas
+scikit-learn
+seaborn
+streamlit
