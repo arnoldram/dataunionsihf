@@ -15,6 +15,8 @@ from matplotlib.pyplot import text
 
 import seaborn as sns
 
+import utils
+
 BLOCK_CONFIG_NOF_SHIFTS_DESCRIPTOR = "naive_number_of_shifts"
 BLOCK_CONFIG_VERBOSE_DESCRIPTOR = "verbose"
 BLOCK_CONFIG_TEAM_NAME_DESCRIPTOR = "team_name"
@@ -530,6 +532,9 @@ def add_sis_column(df):
 
     # Adding the SIS to df_filtered
     df_filtered['SIS'] = df_filtered['Name'].map(player_sis)
+
+    # order the shifts
+    df_filtered = utils.order_block_labels(df_filtered)
 
     return df_filtered
 
