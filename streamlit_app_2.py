@@ -411,8 +411,8 @@ def main():
         "Select Time Window Range (minutes):",
         min_value=0,
         max_value=130,
-        value=(0, 60),  # start and end
-        step=1
+        value=(0, 10),  # start and end
+        step=5
     )
     start_time, end_time = time_window_range
 
@@ -442,7 +442,7 @@ def main():
 
     # Plot SIS
     plot_SIS(df_with_sis,
-             start_time,
+             0,
              end_time,
              team_name="Guest",
              file_name_raw_data=file_name
