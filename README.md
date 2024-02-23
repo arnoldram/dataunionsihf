@@ -87,6 +87,8 @@ To simplify the creation of the block_config, we provide a function `utils.gener
 
 See the `sample_analysis.ipynb` for an example on how to use these functions.
 
+To see a preview of the plot type [here](https://dataunionsihf-jpqzzukaaio3dufjbos9wm.streamlit.app/).
+
 ### Shift intensity score (SIS)
 
 To analyze skating intensity and visualize the results for specific players, use `utils.plot_skating_intensity()`.
