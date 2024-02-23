@@ -238,6 +238,10 @@ def plot_shifts(df: pd.DataFrame,
     if BLOCK_CONFIG_SAVE_PLOT_DESCRIPTOR in block_config and block_config[BLOCK_CONFIG_SAVE_PLOT_DESCRIPTOR]:
         plt.savefig(block_config[BLOCK_CONFIG_SAVE_PLOT_DESCRIPTOR], dpi=300, bbox_inches="tight")
 
+    width = time_window / 2
+    height = 5
+    fig.set_size_inches(width, height)
+
     plt.show()
 
 
@@ -323,6 +327,10 @@ def plot_SIS(df: pd.DataFrame,
     # Save plot if file_name_save_plot is given
     if file_name_save_plot:
         plt.savefig(file_name_save_plot, dpi=300, bbox_inches="tight")
+
+    width = time_window / 2
+    height = 5
+    fig.set_size_inches(width, height)
 
     plt.show()
 

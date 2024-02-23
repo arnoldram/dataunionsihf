@@ -113,18 +113,18 @@ This is an example for the shifts, generated from `sample_analysis.ipynb`:
 
 ![Shifts](images/shift_visualisation.png)
 
-For an interactive preview of the plot, see [here](https://dataunionsihf-qs7vheczgfcx6tu48tvuzc.streamlit.app/).
-
 
 ### Shift intensity score (SIS)
 
-To analyze skating intensity and visualize the results for specific players, use `utils.plot_skating_intensity()`.
+To analyze skating intensity and visualize the results for specific players, use  `utils.plot_SIS()` or `utils.plot_skating_intensity()`.
 
 ![SIS](images/SIS_visualisation.png)
 
-For an interactive preview of the plot, see [here](https://dataunionsihf-jpqzzukaaio3dufjbos9wm.streamlit.app/).
+![plot_skating_intensity](images/plot_skating_intensity.png)
 
-This function requires a preprocessed DataFrame and parameters for player selection and the time window of interest. The DataFrame should include columns for `'Timestamp (ms)', 'Name', 'Skating Intensity', 'End Timestamp', and 'Readable Timestamp'`.
+For an interactive preview of the plots, see [plot_SIS](https://dataunionsihf-qs7vheczgfcx6tu48tvuzc.streamlit.app/) or [plot_skating_intensity](https://dataunionsihf-jpqzzukaaio3dufjbos9wm.streamlit.app/).
+
+This functions require a preprocessed DataFrame and parameters for player selection and the time window of interest. The DataFrame should include columns for `'Timestamp (ms)', 'Name', 'Skating Intensity', 'End Timestamp', and 'Readable Timestamp'`.
 
 **Quick Setup**
 - **Prepare your data** with `utils.read_file(FILE, EVENT_TYPE)` to load player shift events from a CSV file.
