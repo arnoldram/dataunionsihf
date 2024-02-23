@@ -87,11 +87,14 @@ To simplify the creation of the block_config, we provide a function `utils.gener
 
 See the `sample_analysis.ipynb` for an example on how to use these functions.
 
-To see a preview of the plot type [here](https://dataunionsihf-jpqzzukaaio3dufjbos9wm.streamlit.app/).
+To see a preview of the plot type [here](https://dataunionsihf-qs7vheczgfcx6tu48tvuzc.streamlit.app/).
+
 
 ### Shift intensity score (SIS)
 
 To analyze skating intensity and visualize the results for specific players, use `utils.plot_skating_intensity()`.
+
+To see a preview of the plot type [here](https://dataunionsihf-jpqzzukaaio3dufjbos9wm.streamlit.app/).
 
 This function requires a preprocessed DataFrame and parameters for player selection and the time window of interest. The DataFrame should include columns for `'Timestamp (ms)', 'Name', 'Skating Intensity', 'End Timestamp', and 'Readable Timestamp'`.
 
