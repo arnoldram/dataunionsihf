@@ -493,7 +493,7 @@ def find_optimal_amount_of_shifts(df: pd.DataFrame, simple: bool, verbose: bool)
     return nof_shifts, data
 
 
-def add_sis_column(df):
+def add_sis_column(df, players):
     """
     Adds a 'SIS' (Shift Intensity Score) column to the DataFrame for guest players excluding goalkeepers.
     This function filters the DataFrame for guest players, calculates the optimal number of shifts using KMeans clustering,
@@ -501,13 +501,14 @@ def add_sis_column(df):
     of all their shifts relative to the overall average shift intensity of all players.
 
     Parameters:
-    - df: pandas.DataFrame containing player data including columns for 'Name', 'Timestamp (ms)', 'Duration (s)', and 'Skating Intensity'.
+    - df: pandas.DataFrame containing player data including columns for 'Player ID', 'Timestamp (ms)', 'Duration (s)', and 'Skating Intensity'.
+    - player: list of strings containing the Player ID of the selected players to calculate SIS for.
 
     Returns:
     - pandas.DataFrame: The original DataFrame with an added 'SIS' column for each player.
     """
-    # Filter DataFrame for guest players excluding goalkeepers
-    df_filtered = df[df["Name"].str.contains("Guest") & ~df["Name"].str.contains("Goalkeeper")].copy()
+    # Filter DataFrame for parameter players
+    df_filtered = df[df['Player ID'].isin(players)].copy()
 
     # Finding the optimal number of shifts
     optimal_shifts, shift_labels = find_optimal_amount_of_shifts(df_filtered, True, False)
@@ -526,8 +527,8 @@ def add_sis_column(df):
     df_filtered['Average_Shift_Intensity'] = df_filtered.groupby('Shift_Label')['Skating Intensity'].transform('mean')
 
     # Average intensity of all shifts for each player
-    player_shift_means = df_filtered.groupby(['Name', 'Shift_Label'])['Skating Intensity'].mean().reset_index()
-    player_average_intensity = player_shift_means.groupby('Name')['Skating Intensity'].mean()
+    player_shift_means = df_filtered.groupby(['Player ID', 'Shift_Label'])['Skating Intensity'].mean().reset_index()
+    player_average_intensity = player_shift_means.groupby('Player ID')['Skating Intensity'].mean()
 
     # Average value of intensities for all shifts of all players
     overall_average_shift_intensity = player_shift_means['Skating Intensity'].mean()
@@ -536,7 +537,7 @@ def add_sis_column(df):
     player_sis = player_average_intensity / overall_average_shift_intensity
 
     # Adding the SIS to df_filtered
-    df_filtered['SIS'] = df_filtered['Name'].map(player_sis)
+    df_filtered['SIS'] = df_filtered['Player ID'].map(player_sis)
 
     # order the shifts
     df_filtered = order_block_labels(df_filtered)
