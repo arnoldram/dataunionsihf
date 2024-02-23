@@ -1,20 +1,13 @@
-import streamlit as st
-import datetime
-import json
 from io import StringIO
 
-import matplotlib.dates as mdates
+import matplotlib.cm as cm
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import pandas as pd
-import requests
+import streamlit as st
 from kneed import KneeLocator
-from requests.auth import HTTPBasicAuth
-from sklearn.cluster import KMeans
-import matplotlib.colors as mcolors
-import matplotlib.cm as cm
 from matplotlib.pyplot import text
-
-import seaborn as sns
+from sklearn.cluster import KMeans
 
 BLOCK_CONFIG_NOF_SHIFTS_DESCRIPTOR = "naive_number_of_shifts"
 BLOCK_CONFIG_VERBOSE_DESCRIPTOR = "verbose"
@@ -82,6 +75,7 @@ def read_file(file_name: str, event_type: str) -> pd.DataFrame:
 
     return df
 
+
 def generate_block_config(naive: bool,
                           verbose: bool,
                           team_name: str,
@@ -108,6 +102,7 @@ def generate_block_config(naive: bool,
 
     return block_config
 
+
 def get_colour(intensity: float, min_intensity: float, max_intensity: float) -> str:
     """
     Creates a colour between green and red according to intensity, where green is less intense and red is more intense.
@@ -121,6 +116,7 @@ def get_colour(intensity: float, min_intensity: float, max_intensity: float) -> 
     green = int((1 - normalized_intensity) * 255)
     red = int(normalized_intensity * 255)
     return f"#{red:02x}{green:02x}00"
+
 
 def plot_shifts(df: pd.DataFrame,
                 starting_minute: int,
@@ -197,6 +193,7 @@ def plot_shifts(df: pd.DataFrame,
 
     st.pyplot()
 
+
 def plot_SIS(df: pd.DataFrame,
              starting_minute: int,
              time_window: int,
@@ -245,7 +242,8 @@ def plot_SIS(df: pd.DataFrame,
                              df["SIS"].max()),
                 solid_capstyle="butt")
 
-        text(start_minute, str(order_block_labels(df)['Player ID'][i]), df['Shift_Label'][i], fontsize=9, ha='left', va='center', color='black')
+        text(start_minute, str(order_block_labels(df)['Player ID'][i]), df['Shift_Label'][i], fontsize=9, ha='left',
+             va='center', color='black')
 
     # format date on x axis
     plt.xlim(starting_minute, starting_minute + time_window)
@@ -281,6 +279,7 @@ def plot_SIS(df: pd.DataFrame,
 
     st.pyplot()
 
+
 def order_block_labels(df: pd.DataFrame) -> pd.DataFrame:
     """
     Orders the block labels in the DataFrame such that smallest label number is the first shift to happen.
@@ -307,6 +306,7 @@ def order_block_labels(df: pd.DataFrame) -> pd.DataFrame:
     df['Shift_Label'] = df['Shift_Label'].map(label_mapping)
 
     return df
+
 
 def find_optimal_amount_of_shifts(df: pd.DataFrame, simple: bool, verbose: bool) -> (int, pd.DataFrame):
     """
@@ -402,6 +402,7 @@ def add_sis_column(df):
 
     return df_filtered
 
+
 def main():
     st.set_option('deprecation.showPyplotGlobalUse', False)
     st.title("Shifts and Intensity Plot")
@@ -447,6 +448,7 @@ def main():
              team_name="Guest",
              file_name_raw_data=file_name
              )
+
 
 if __name__ == "__main__":
     main()

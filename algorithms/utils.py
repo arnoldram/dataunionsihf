@@ -531,7 +531,7 @@ def add_sis_column(df):
     df_filtered['SIS'] = df_filtered['Name'].map(player_sis)
 
     # order the shifts
-    df_filtered = utils.order_block_labels(df_filtered)
+    df_filtered = order_block_labels(df_filtered)
 
     return df_filtered
 

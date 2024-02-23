@@ -1,7 +1,7 @@
 import streamlit as st
 import matplotlib.pyplot as plt
 import seaborn as sns
-from utils import read_file, add_sis_column, add_duration_since_start, plot_skating_intensity
+from algorithms.utils import read_file, add_sis_column, add_duration_since_start, plot_skating_intensity
 
 
 def plot_skating_intensity(df, selected_players, start_time, end_time):
