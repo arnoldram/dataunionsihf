@@ -96,6 +96,8 @@ To analyze skating intensity and visualize the results for specific players, use
 
 ![SIS](images/SIS_visualisation.png)
 
+![plot_skating_intensity](images/plot_skating_intensity.png)
+
 For an interactive preview of the plots, see [plot_SIS](https://dataunionsihf-qs7vheczgfcx6tu48tvuzc.streamlit.app/) or [plot_skating_intensity](https://dataunionsihf-jpqzzukaaio3dufjbos9wm.streamlit.app/).
 
 This functions require a preprocessed DataFrame and parameters for player selection and the time window of interest. The DataFrame should include columns for `'Timestamp (ms)', 'Name', 'Skating Intensity', 'End Timestamp', and 'Readable Timestamp'`.
