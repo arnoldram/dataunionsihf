@@ -1,8 +1,32 @@
-# dataunionsihf
+# Swiss Hockey Shift Analysis
+
+This repository contains the codebase for analyzing shift data in swiss ice hockey games to gain insights into the intensity of player shifts. We use event data from the platform kinexon to perform a detailed shift analysis, which then can be used from hockey teams to analyze their game in regards to the shift intensities of the respective players and blocks in a game.
 
 We tried to keep our code as user-friendly as possible. As an example on how to use it and and understand the data, we wrote a jupyter notebook `sample_analysis.iypnb`.
 
-All the more complex functions are in the `utils.py` file.
+
+## Repository Structure
+
+### File/Folder Descriptions
+
+**algorithms**
+- `utils.py` contains all the more complex functions for the analysis
+
+**data**
+- `Events-Match_test__...csv` contains the original event data of a test match provided by the platform kinexon
+- `SHIFTS_ONLY_Events-Match_...csv` is a filtered version of the original dataset and only includes the shift event
+
+**images**
+- this folder contains the most important plots of the analysis as .png
+
+**playgrounds**
+- each member of the project owns an individual jupiter notebook as a playground for his individual drafts, adjustments or tests
+
+`requirements.txt` contains a list of necessary python packages required to run the project.
+
+`sample_analysis` serves as an example showcasing the usage and understanding of the data as well as the underlying analysis
+
+
 
 ## Installation
 
