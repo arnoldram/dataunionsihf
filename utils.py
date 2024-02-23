@@ -2,20 +2,16 @@ import datetime
 import json
 from io import StringIO
 
-import matplotlib.dates as mdates
+import matplotlib.cm as cm
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import pandas as pd
 import requests
+import seaborn as sns
 from kneed import KneeLocator
+from matplotlib.pyplot import text
 from requests.auth import HTTPBasicAuth
 from sklearn.cluster import KMeans
-import matplotlib.colors as mcolors
-import matplotlib.cm as cm
-from matplotlib.pyplot import text
-
-import seaborn as sns
-
-import utils
 
 BLOCK_CONFIG_NOF_SHIFTS_DESCRIPTOR = "naive_number_of_shifts"
 BLOCK_CONFIG_VERBOSE_DESCRIPTOR = "verbose"
@@ -293,7 +289,8 @@ def plot_SIS(df: pd.DataFrame,
                              df["SIS"].max()),
                 solid_capstyle="butt")
 
-        text(start_minute, str(df['Player ID'][i]), df['Shift_Label'][i], fontsize=9, ha='left', va='center', color='black')
+        text(start_minute, str(df['Player ID'][i]), df['Shift_Label'][i], fontsize=9, ha='left', va='center',
+             color='black')
 
     # format date on x axis
     plt.xlim(starting_minute, starting_minute + time_window)

@@ -1,9 +1,10 @@
 jupyter
-kneed
-matplotlib
+kneed~=0.8.5
+matplotlib~=3.8.2
 numpy
 oceanlib
-pandas
-scikit-learn
-seaborn
-streamlit
+pandas~=2.2.0
+scikit-learn~=1.4.0
+seaborn~=0.13.2
+streamlit~=1.31.1
+requests~=2.31.0
