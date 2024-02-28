@@ -193,7 +193,7 @@ def plot_shifts(df: pd.DataFrame,
 
     # plot bars
     for i in df.index:
-        start_minute = df['Time Since Start'][i]
+        start_minute = starting_minute + df['Time Since Start'][i]
         end_minute = start_minute + df['time'][i].total_seconds() / 60
 
         ax.plot([start_minute, end_minute],
