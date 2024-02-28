@@ -1,8 +1,32 @@
-# dataunionsihf
+# Swiss Hockey Shift Analysis
+
+This repository contains the codebase for analyzing shift data in swiss ice hockey games to gain insights into the intensity of player shifts. We use event data from the platform kinexon to perform a detailed shift analysis, which then can be used from hockey teams to analyze their game in regards to the shift intensities of the respective players and blocks in a game.
 
 We tried to keep our code as user-friendly as possible. As an example on how to use it and and understand the data, we wrote a jupyter notebook `sample_analysis.iypnb`.
 
-All the more complex functions are in the `utils.py` file.
+
+## Repository Structure
+
+### File/Folder Descriptions
+
+**algorithms**
+- `utils.py` contains all the more complex functions for the analysis
+
+**data**
+- `Events-Match_test__...csv` contains the original event data of a test match provided by the platform kinexon
+- `SHIFTS_ONLY_Events-Match_...csv` is a filtered version of the original dataset and only includes the shift event
+
+**images**
+- this folder contains the most important plots of the analysis as .png
+
+**playgrounds**
+- each member of the project owns an individual jupiter notebook as a playground for his individual drafts, adjustments or tests
+
+`requirements.txt` contains a list of necessary python packages required to run the project.
+
+`sample_analysis` serves as an example showcasing the usage and understanding of the data as well as the underlying analysis
+
+
 
 ## Installation
 
@@ -89,18 +113,19 @@ This is an example for the shifts, generated from `sample_analysis.ipynb`:
 
 ![Shifts](images/shift_visualisation.png)
 
-For an interactive preview of the plot, see [here](https://dataunionsihf-qs7vheczgfcx6tu48tvuzc.streamlit.app/).
-
 
 ### Shift intensity score (SIS)
 
-To analyze skating intensity and visualize the results for specific players, use `utils.plot_skating_intensity()`.
+To analyze skating intensity and visualize the results for specific players, use  `utils.plot_SIS()` or `utils.plot_skating_intensity()`.
 
 ![SIS](images/SIS_visualisation.png)
 
-For an interactive preview of the plot, see [here](https://dataunionsihf-jpqzzukaaio3dufjbos9wm.streamlit.app/).
+![plot_skating_intensity](images/plot_skating_intensity.png)
 
-This function requires a preprocessed DataFrame and parameters for player selection and the time window of interest. The DataFrame should include columns for `'Timestamp (ms)', 'Name', 'Skating Intensity', 'End Timestamp', and 'Readable Timestamp'`.
+#### App
+For an interactive preview of the plots, see [plot_SIS](https://dataunionsihf-qs7vheczgfcx6tu48tvuzc.streamlit.app/) or [plot_skating_intensity](https://dataunionsihf-jpqzzukaaio3dufjbos9wm.streamlit.app/).
+
+This functions require a preprocessed DataFrame and parameters for player selection and the time window of interest. The DataFrame should include columns for `'Timestamp (ms)', 'Name', 'Skating Intensity', 'End Timestamp', and 'Readable Timestamp'`.
 
 **Quick Setup**
 - **Prepare your data** with `utils.read_file(FILE, EVENT_TYPE)` to load player shift events from a CSV file.
